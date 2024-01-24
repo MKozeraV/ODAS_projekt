@@ -70,6 +70,12 @@ namespace ProjektODASAPI.Services
                 public string AccountNumber { get; set; } = null;
                  */
                 object? Content = await _context.Users.Where(f => f.Login == Login).FirstOrDefaultAsync();
+                if(Content == null)
+                {
+                    response.ErrorMessage = "No such user";
+                    response.IsSuccess = false;
+                    return response;
+                }
                 System.Reflection.PropertyInfo pi = Content.GetType().GetProperty("CardNumber");
                 String CardN = (String)(pi.GetValue(Content, null));
 
@@ -126,15 +132,50 @@ namespace ProjektODASAPI.Services
         {
             var response = new MainResponse();
             try
-            {
-                var responsePas = GetWholePasswordSync(changeDTO.Login);
-                if (response.Content == null)
+            {   //
+                /*var existingUserT = _context.Users.Where(f => f.Login == changeDTO.Login).FirstOrDefault();
+                byte[] salt3 = System.Security.Cryptography.RandomNumberGenerator.GetBytes(128 / 8);
+                existingUserT.Salt = Convert.ToBase64String(salt3);
+                _context.SaveChanges();
+                existingUserT = _context.Users.Where(f => f.Login == changeDTO.Login).FirstOrDefault();
+                System.Diagnostics.Debug.WriteLine("KROK 111111111111");
+                var passwordShuffledAndSalt1 = PasswordShuffler(changeDTO.NewPassword, existingUserT.Salt);
+                System.Diagnostics.Debug.WriteLine("KROK 22222222222222");
+                //string passwordShuffled = PasswordShuffler(changeDTO.NewPassword);
+                existingUserT.PasswordSet = passwordShuffledAndSalt1.Item1;
+                //existingUser.Salt = Convert.ToBase64String(passwordShuffledAndSalt.Item2);
+                await _context.SaveChangesAsync();
+                response.IsSuccess = true;
+                response.Content = "SKONCZYLEM ROBOTE";
+                System.Diagnostics.Debug.WriteLine(passwordShuffledAndSalt1.Item1);
+                System.Diagnostics.Debug.WriteLine(passwordShuffledAndSalt1.Item2);
+                return response;*/
+
+
+
+
+                if (changeDTO.NewPassword.Length <10)
+                {
+                    response.IsSuccess = false;
+                    response.Content = "Password is too weak";
+                    return response;
+                }
+                double passwordEntropy = CalculateEntropy(changeDTO.NewPassword);
+                if(passwordEntropy <60) 
+                {
+                    System.Diagnostics.Debug.WriteLine("HASLO JEST SLABE - NIE POWINIENES GO UZYWAC");
+                    response.IsSuccess = false;
+                    response.Content = "Password is too weak";
+                    return response;
+                }
+                MainResponse responsePas = GetWholePasswordSync(changeDTO.Login);
+                if (responsePas.IsSuccess != true)
                 {
                     response.IsSuccess = false;
                     response.Content = "Can not change password-error1";
                     return response;
                 }
-
+                
                 string passwordLong = (string)responsePas.Content;
                 string correctPassword = GetPasswordHash(passwordLong, changeDTO.numbersT);
 
@@ -143,7 +184,7 @@ namespace ProjektODASAPI.Services
                 string salt1 = splitted[1];
                 byte[] salt2 = Encoding.UTF8.GetBytes(salt1);
                 string UserHashedPassword = Hasher2(changeDTO.OldPassword, salt2);
-
+                //
                 var existingUser = _context.Users.Where(f => f.Login == changeDTO.Login && UserHashedPassword == correctPassword).FirstOrDefault();
                 if (existingUser != null)
                 {
@@ -198,7 +239,8 @@ namespace ProjektODASAPI.Services
                 for (int i = 0; i < Lista.Count; i++)
                 {
                     StringBuilder sb = new StringBuilder(template);
-                    cutPas = cutPas + passwordToShuffle[Lista[i]];
+                    if(i!=0)
+                    cutPas = cutPas + passwordToShuffle[Lista.ElementAt(i)];
                     sb[Lista.ElementAt(i)] = '<';
                     template = sb.ToString();
                 }
@@ -306,9 +348,6 @@ namespace ProjektODASAPI.Services
                 string WholePassword = (string)(pi.GetValue(Content, null));
                 System.Reflection.PropertyInfo pi1 = Content.GetType().GetProperty("Salt");
                 string Salt = (string)(pi1.GetValue(Content, null));
-
-                System.Diagnostics.Debug.WriteLine("UWAGAUWAGA WYPISUJE SOL - " + Salt);
-
                 response.Content = WholePassword+'*'+Salt;
                 response.IsSuccess = true;
             }
@@ -438,5 +477,87 @@ namespace ProjektODASAPI.Services
             }
             return userName;
         }
+
+        public double CalculateEntropy(string password)
+        {
+            var cardinality = 0;
+
+            // Password contains lowercase letters.
+            if (password.Any(c => char.IsLower(c)))
+            {
+                cardinality = 26;
+            }
+
+            // Password contains uppercase letters.
+            if (password.Any(c => char.IsUpper(c)))
+            {
+                cardinality += 26;
+            }
+
+            // Password contains numbers.
+            if (password.Any(c => char.IsDigit(c)))
+            {
+                cardinality += 10;
+            }
+
+            // Password contains symbols.
+            if (password.IndexOfAny("\\|¬¦`!\"£$%^&*()_+-=[]{};:'@#~<>,./? ".ToCharArray()) >= 0)
+            {
+                cardinality += 36;
+            }
+
+            return Math.Log(cardinality, 2) * password.Length;
+        }
+
+        public async Task<MainResponse> GetTransferHistory(string user)
+        {
+            var response = new MainResponse();
+            try
+            {
+        
+                object? Content = await _context.Users.Where(f => f.Login == user).FirstOrDefaultAsync();
+                if (Content == null)
+                {
+                    response.ErrorMessage = "No such user";
+                    response.IsSuccess = false;
+                    return response;
+                }
+                System.Reflection.PropertyInfo pi = Content.GetType().GetProperty("TransferHistory");
+                String Hist = (String)(pi.GetValue(Content, null));
+
+
+
+                
+                response.Content = Hist;
+                //response.Content = await _context.Users.Where(f => f.Login == Login).FirstOrDefaultAsync();
+                response.IsSuccess = true;
+            }
+            catch (Exception ex)
+            {
+                response.ErrorMessage = ex.Message;
+                response.IsSuccess = false;
+            }
+            return response;
+        }
+
+
+        //do usuniecia
+        public async Task<MainResponse> ChangePassword222(TESTCHANGE1 changeDTO)
+        {
+            var response = new MainResponse();
+            var existingUser = _context.Users.Where(f => f.Login == changeDTO.Login).FirstOrDefault();
+            if (existingUser != null)
+            {
+                existingUser.PasswordSet = changeDTO.NewPassword;
+                existingUser.Salt = changeDTO.Salt;
+                await _context.SaveChangesAsync();
+                response.IsSuccess = true;
+                response.Content = "Password updated";
+            }
+            response.IsSuccess = false;
+            response.ErrorMessage = "did not work";
+            return response;
+        }
+
     } 
 }

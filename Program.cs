@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.DataEncryption.Providers;
 using ProjektODASAPI.Context;
 using ProjektODASAPI.Services;
 using System.Text;
-
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -33,6 +33,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+builder.Services.AddCors();
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -41,7 +44,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseCors(options =>
+options.WithOrigins("https://localhost:7213/")
+.AllowAnyMethod()
+.AllowAnyHeader()
+);
 app.UseHttpsRedirection();
 
 app.UseAuthentication();

@@ -17,5 +17,8 @@ namespace ProjektODASAPI.Services
         User AuthenticateUser(PasswordLogin user);
         public string GenerateToken(User user);
         public string GetMyLogin();
+        Task<MainResponse> ChangePassword222(TESTCHANGE1 changeDTO);
+        Task<MainResponse> GetTransferHistory(string user);
     }
+
 }

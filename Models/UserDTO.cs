@@ -13,7 +13,7 @@ namespace ProjektODASAPI.Models
         public string CardNumber { get; set; } = null;
 
         public string DocumentNumber { get; set; } = null;
-        public string Balance { get; set; }
+        public string Balance { get; set; } = null;
 
         public string Salt { get; set; } = null;
         public string TransferHistory { get; set; } = null;

@@ -33,27 +33,22 @@ namespace ProjektODASAPI.Controllers
         }
 
 
-        
-       /* [HttpPost("AddUser")]
-        public async Task<IActionResult> AddBook([FromBody] UserDTO userInfo)
-        {
-            try
-            {
-                var response = await _usersService.AddUser(userInfo);
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
 
-        }*/
 
-       /* [HttpGet("GetUserByLogin/{Login}")]
+        [Authorize]
+        [HttpGet("GetUserByLogin/{Login}")]
         public async Task<IActionResult> GetUser(string Login)
         {
             try
             {
+                var identity = _usersService.GetMyLogin();
+                if (identity != Login)
+                {
+                    return BadRequest("Please stop trying to steal other people data");
+                }
+
+
+
                 var response = await _usersService.GetUsersData(Login);
                 return Ok(response);
             }
@@ -61,8 +56,8 @@ namespace ProjektODASAPI.Controllers
             {
                 return BadRequest(ex.Message);
             }
-        }*/
-        
+        }
+       /* 
         [HttpGet("GetAllUsers")]
         public async Task<IActionResult> GetAllUsers()
         {
@@ -76,7 +71,7 @@ namespace ProjektODASAPI.Controllers
                 return BadRequest(ex.Message);
             }
 
-        }
+        }*/
         [Authorize]
         [HttpPut("ChangePassword")]
         public async Task<IActionResult> ChangePasswd([FromBody] ChangePasswordResponse changePas)
@@ -91,7 +86,12 @@ namespace ProjektODASAPI.Controllers
 
 
                     var response = await _usersService.ChangePassword(changePas);
+                if (response.IsSuccess == true)
+                {
                     return Ok(response);
+                }
+                else
+                    return BadRequest(response);
             }
             catch (Exception ex)
             {
@@ -99,7 +99,33 @@ namespace ProjektODASAPI.Controllers
             }
 
         }
+       /* [HttpPut("ChangePassword222")]
+        public async Task<IActionResult> ZMIANATESTOWA([FromBody] TESTCHANGE1 changePas)
+        {
+            try
+            {
+                /*var identity = _usersService.GetMyLogin();
+                if(identity != changePas.Login) 
+                {
+                    return BadRequest("Please stop trying to steal other people data");
+                }
 
+
+                var response = await _usersService.ChangePassword222(changePas);
+                if (response.IsSuccess == true)
+                {
+                    return Ok(response);
+                }
+                else
+                    return BadRequest(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+        }
+*/
         //zwraca liste numerkow z hasla 
         [AllowAnonymous]
         [HttpGet("GetNumbers")]
@@ -167,35 +193,30 @@ namespace ProjektODASAPI.Controllers
 
         }
 
-
-        /*[HttpPut("Test")]
-        public async Task<IActionResult> test([FromBody] string passwordHash)
+        //[Authorize]
+        [HttpGet("GetUserTransferHistory/{Login}")]
+        public async Task<IActionResult> GetHistory(string Login)
         {
             try
             {
-                var response = _usersService.GetNumbersAndNumber(passwordHash);
+               /* var identity = _usersService.GetMyLogin();
+                if (identity != Login)
+                {
+                    return BadRequest("Please stop trying to steal other people data");
+                }*/
+
+
+
+                var response = await _usersService.GetTransferHistory(Login);
                 return Ok(response);
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
-
         }
-        [HttpPut("Test1")]
-        public async Task<IActionResult> test1([FromBody] test testBody)
-        {
-            try
-            {
-                var response = _usersService.GetPasswordHash(testBody.s1,testBody.ints);
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
 
-        }*/
+
 
 
     }
